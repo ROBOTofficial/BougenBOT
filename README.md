@@ -1,0 +1,2 @@
+# BougenBOT
+Discord Bot Repository
