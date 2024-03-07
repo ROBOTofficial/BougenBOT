@@ -1,0 +1,14 @@
+```
+権限持ちコマンド
+bougen list
+bougen urahelp
+bougen add [暴言]
+bougen remove [暴言]
+bougen search [暴言]
+
+Ownerコマンド
+bougen permission list
+bougen permission add [id]
+bougen permission remove [id]
+bougen per <number>
+```
