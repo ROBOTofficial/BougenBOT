@@ -1,0 +1,22 @@
+{
+  "name": "bougen",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node main.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "@types/ws": "^8.5.10",
+    "fs": "^0.0.1-security",
+    "ts-node": "^10.9.2",
+    "ws": "^8.16.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.7"
+  }
+}
