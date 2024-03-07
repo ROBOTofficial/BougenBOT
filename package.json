@@ -2,12 +2,12 @@
   "name": "bougen",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
     "start": "ts-node main.ts"
   },
   "keywords": [],
-  "author": "",
+  "author": "ROBOT",
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^20.11.24",
