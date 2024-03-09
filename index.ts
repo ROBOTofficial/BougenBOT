@@ -162,7 +162,7 @@ export class BOT {
             }
         })
         this.ws.on("close", () => {
-            this.heartbeat_stop()
+            clearInterval(this.heartbeat_interval)
             this.BotStart()
         })
     }
@@ -261,15 +261,40 @@ export class BOT {
             }
         )
     }
+    async GetGuildList():Promise<Array<object>> {
+        let response = await axios.get(
+            `https://discord.com/api/users/@me/guilds`,{
+                headers:{
+                    Authorization:`Bot ${this.token}`
+                }
+            }
+        )
+        if (response.status !== 200) return []
+        let GuildList:Array<{}> = response.data
+        return GuildList
+    }
+    async GamePlayUpdate() {
+        let GuildLIST = await this.GetGuildList()
+        this.ws.send(JSON.stringify({
+            op:3,
+            d:{
+                since:null,
+                activities:[{
+                    name:`${GuildLIST.length}個のサーバーで稼働中`,
+                    type:0
+                }],
+                status:"online",
+                afk:false
+            }
+        }))
+    }
     heartbeat(heartbeat_interval:number) {
         this.heartbeat_interval = setInterval(() => {
             this.ws.send(JSON.stringify({
                 op:1,
                 d:{}
             }))
+            this.GamePlayUpdate()
         },heartbeat_interval)
-    }
-    heartbeat_stop() {
-        clearInterval(this.heartbeat_interval)
     }
 }
