@@ -30,6 +30,12 @@ interface infos {
                 id:string
             }
         }
+        referenced_message:{
+            id:string
+            author:{
+                id:string
+            }
+        }
     }
     t: string
 }
@@ -169,9 +175,12 @@ export class BOT {
     async PermissionCheck(id:string):Promise<boolean> {
         return this.PermissionLIST.includes(id)
     }
+    async BotMessageReply(Message:infos):Promise<boolean> {
+        return (typeof Message.d.referenced_message === "object" && typeof Message.d.referenced_message.author === "object" && Message.d.referenced_message.author.id === this.BotID) ? true : false
+    }
     async BougenReply(content:string,Message:infos) {
         let Bougen = this.BougenLIST.split("\n")
-        if (Bougen.includes(content) || ((await this.RandomReply()) && (await this.ReplyContext(content)))) {
+        if (Bougen.includes(content) || ((await this.RandomReply()) && (await this.ReplyContext(content))) || (await this.BotMessageReply(Message))) {
             this.MessageSend((await this.RandomBougen()),Message,true)
         }
     }
