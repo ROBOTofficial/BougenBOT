@@ -184,7 +184,7 @@ export class BOT {
     }
     async BougenReply(content:string,Message:infos) {
         let Bougen = this.BougenLIST.split("\n")
-        if (Bougen.includes(content) || ((await this.RandomReply()) && (await this.ReplyContext(content)))) {
+        if (Bougen.includes(content) || ((await this.RandomReply()) && (await this.ReplyContext(content))) || (await this.BotMessageReply(Message))) {
             this.MessageSend((await this.RandomBougen()),Message,true)
         }
     }
