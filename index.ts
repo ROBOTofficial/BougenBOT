@@ -2,7 +2,9 @@ import axios from "axios";
 import WebSocket from "ws";
 import fs from "fs";
 
-process.on("uncaughtExceptionMonitor",(err) => {})
+process.on("uncaughtExceptionMonitor",(err) => {
+    //console.log(err)
+})
 
 interface infos { 
     d:{
@@ -35,12 +37,13 @@ interface infos {
             author:{
                 id:string
             }
-        }
+        } | null
     }
     t: string
 }
 interface ConfigInterFace {
     AnswerProbability:number
+    version:string
 }
 
 export class BOT {
@@ -161,7 +164,7 @@ export class BOT {
                     if (message.d.content.startsWith("bougen per") && args[2] !== undefined && !isNaN(Number(args[2]))) {
                         this.Config["AnswerProbability"] = Number(args[2])
                         this.AnswerProbability = Number(args[2])
-                        fs.writeFileSync("./bougen/config.json",JSON.stringify(this.Config))
+                        fs.writeFileSync("./bougen/config.json",JSON.stringify(this.Config,null,"\t"))
                         this.MessageSend(`メッセージ内に暴言が含まれている場合にリプを送る確率を**${this.AnswerProbability}%**にしました`,message,true)
                     }
                 }
@@ -176,11 +179,12 @@ export class BOT {
         return this.PermissionLIST.includes(id)
     }
     async BotMessageReply(Message:infos):Promise<boolean> {
-        return (typeof Message.d.referenced_message === "object" && typeof Message.d.referenced_message.author === "object" && Message.d.referenced_message.author.id === this.BotID) ? true : false
+        let ReferencedMessage = Message.d.referenced_message
+        return ( typeof ReferencedMessage !== "undefined" && ReferencedMessage !== null && typeof ReferencedMessage.author === "object" && ReferencedMessage.author.id === this.BotID) ? true : false
     }
     async BougenReply(content:string,Message:infos) {
         let Bougen = this.BougenLIST.split("\n")
-        if (Bougen.includes(content) || ((await this.RandomReply()) && (await this.ReplyContext(content))) || (await this.BotMessageReply(Message))) {
+        if (Bougen.includes(content) || ((await this.RandomReply()) && (await this.ReplyContext(content)))) {
             this.MessageSend((await this.RandomBougen()),Message,true)
         }
     }
@@ -289,7 +293,7 @@ export class BOT {
             d:{
                 since:null,
                 activities:[{
-                    name:`${GuildLIST.length}個のサーバーで稼働中`,
+                    name:`v${this.Config.version} | ${GuildLIST.length}guilds`,
                     type:0
                 }],
                 status:"online",
