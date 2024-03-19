@@ -5,6 +5,8 @@ bougen urahelp
 bougen add [暴言]
 bougen remove [暴言]
 bougen search [暴言]
+bougen guild [サーバーid]
+bougen channel [チャンネルid]
 
 Ownerコマンド
 bougen permission list
