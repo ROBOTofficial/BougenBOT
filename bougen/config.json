@@ -1,1 +1,8 @@
-{"AnswerProbability":50}
+{
+	"AnswerProbability": 50,
+	"version": "1.2",
+	"NonDetection": {
+		"guilds": [],
+		"channels": []
+	}
+}
