@@ -3,7 +3,7 @@ import WebSocket from "ws";
 import fs from "fs";
 
 process.on("uncaughtExceptionMonitor",(err) => {
-    //console.log(err)
+    console.log(err)
 })
 
 interface infos { 
@@ -44,6 +44,10 @@ interface infos {
 interface ConfigInterFace {
     AnswerProbability:number
     version:string
+    NonDetection:{
+        guilds:string[]
+        channels:string[]
+    }
 }
 
 export class BOT {
@@ -99,7 +103,7 @@ export class BOT {
                 this.ReplyInteraction(message.d.id,message.d.token,message)
             }
             if (message["t"] === "MESSAGE_CREATE" && message.d.content !== "" && message.d.author.bot !== true) {
-                this.BougenReply(message.d.content,message)
+                if (!(await this.NonDetectionCheck(message))) this.BougenReply(message.d.content,message)
 
                 //権限持ち
                 if ((await this.PermissionCheck(message.d.author.id))) {
@@ -134,6 +138,12 @@ export class BOT {
                         if (Bougen.includes(content)) {
                             this.MessageSend("登録済みです。",message,true)
                         } else this.MessageSend("登録されていません",message,true)
+                    } else if (message.d.content.startsWith("bougen guild") && args[2] !== undefined) {
+                        let result = await this.NonDetection("guilds",args[2])
+                        this.MessageSend(`${args[2]}を非検知サーバー${result === "add" ? "に追加" : "から削除"}しました。`,message,true)
+                    } else if (message.d.content.startsWith("bougen channel") && args[2] !== undefined) {
+                        let result = await this.NonDetection("channels",args[2])
+                        this.MessageSend(`${args[2]}を非検知チャンネル${result === "add" ? "に追加" : "から削除"}しました。`,message,true)
                     }
                 }
 
@@ -174,6 +184,17 @@ export class BOT {
             clearInterval(this.heartbeat_interval)
             this.BotStart()
         })
+    }
+    async NonDetectionCheck(Message:infos) {
+        return this.Config.NonDetection.guilds.includes(Message.d.guild_id) || this.Config.NonDetection.channels.includes(Message.d.channel_id)
+    }
+    async NonDetection(type:"channels"|"guilds",content:string):Promise<"remove"|"add"> {
+        let includesCheck = this.Config.NonDetection[type].includes(content)
+        if (includesCheck) {
+            this.Config.NonDetection[type] = this.Config.NonDetection[type].filter(value => value !== content)
+        } else this.Config.NonDetection[type].push(content)
+        fs.writeFileSync("./bougen/config.json",JSON.stringify(this.Config,null,"\t"))
+        return includesCheck ? "remove" : "add"
     }
     async PermissionCheck(id:string):Promise<boolean> {
         return this.PermissionLIST.includes(id)
