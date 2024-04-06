@@ -56,6 +56,8 @@ export class BOT {
     public BotID:string
     public PermissionLIST:string[]
     public BougenLIST:string
+    public ReturnLIST:string
+    public DetectionLIST:string
     public Config:ConfigInterFace
     public AnswerProbability:number
     public heartbeat_interval:NodeJS.Timeout
@@ -65,6 +67,8 @@ export class BOT {
         this.BotID = ""
         this.PermissionLIST = JSON.parse(fs.readFileSync("./bougen/permission.json","utf-8"))
         this.BougenLIST = fs.readFileSync("./bougen/bougen.txt","utf-8")
+        this.ReturnLIST = fs.readFileSync("./bougen/return.txt","utf-8")
+        this.DetectionLIST = fs.readFileSync("./bougen/detection.txt","utf-8")
         this.Config = JSON.parse(fs.readFileSync("./bougen/config.json","utf-8"))
         this.AnswerProbability = this.Config["AnswerProbability"]
         this.ws = new WebSocket("wss://gateway.discord.gg/?v=10&encoding=json")
@@ -108,35 +112,92 @@ export class BOT {
                 //権限持ち
                 if ((await this.PermissionCheck(message.d.author.id))) {
                     const args = message.d.content.split(" ")
-                    if (message.d.content === "bougen list") {
-                        this.MessageSend(`${this.BougenLIST.split("\n").length-1}個の暴言が登録されています。\n\`\`\`${this.BougenLIST}\`\`\``,message,true)
-                    }
+                    if (message.d.content === "bougen list") this.MessageSend(`返答ワード${this.ReturnLIST.split("\n").length-1}個\n検知ワード${this.DetectionLIST.split("\n").length-1}個\n両方${this.BougenLIST.split("\n").length-1}個\n合計${this.ReturnLIST.split("\n").length-1+this.DetectionLIST.split("\n").length-1+this.BougenLIST.split("\n").length-1}個`,message,true)
                     if (message.d.content === "bougen urahelp") this.MessageSend(fs.readFileSync("./bougen/help.txt","utf-8"),message,true)
-                    if (message.d.content.startsWith("bougen add") && args[2] !== undefined) {
+                    if (message.d.content.startsWith("bougen add") && args[2] !== undefined && args[3] !== undefined) {
                         let Bougen = this.BougenLIST.split("\n")
-                        for (let i = 0; i < 2; i++) args.shift()
+                        let ReturnTxt = this.ReturnLIST.split("\n")
+                        let DetectionTxt = this.DetectionLIST.split("\n")
+                        
+                        let commandType = args[2]
+                        for (let i = 0; i < 3; i++) args.shift()
                         let content = args.join(" ")
-                        if (!Bougen.includes(content)) {
-                            fs.appendFileSync("./bougen/bougen.txt",`${content}\n`)
-                            this.BougenLIST = fs.readFileSync("./bougen/bougen.txt","utf-8")
-                            this.MessageSend(`**${content}** を暴言リストに登録しました。\n現在暴言リストには${this.BougenLIST.split("\n").length-1}個の暴言が登録されています。`,message,true)
+
+                        if (!Bougen.includes(content) || !ReturnTxt.includes(content) || !DetectionTxt.includes(content)) {
+                            switch (commandType) {
+                                case "bougen":
+                                    fs.appendFileSync("./bougen/bougen.txt",`${content}\n`)
+                                    this.BougenLIST = fs.readFileSync("./bougen/bougen.txt","utf-8")
+                                    this.MessageSend(`**${content}** を暴言リストに登録しました。`,message,true)
+                                    break
+                                case "return":
+                                    fs.appendFileSync("./bougen/return.txt",`${content}\n`)
+                                    this.ReturnLIST = fs.readFileSync("./bougen/return.txt","utf-8")
+                                    this.MessageSend(`**${content}** を返答ワードに登録しました。`,message,true)
+                                    break
+                                case "detection":
+                                    fs.appendFileSync("./bougen/detection.txt",`${content}\n`)
+                                    this.DetectionLIST = fs.readFileSync("./bougen/detection.txt","utf-8")
+                                    this.MessageSend(`**${content}** を検知ワードに登録しました。`,message,true)
+                                    break
+                                default:
+                                    this.MessageSend("タイプが[bougen / return / detection]以外は無効です。",message,true)
+                                    break
+                            }
+
                         } else this.MessageSend("既に登録されています",message,true)
-                    } else if (message.d.content.startsWith("bougen remove") && args[2] !== undefined) {
+
+                    } else if (message.d.content.startsWith("bougen remove") && args[2] !== undefined && args[3] !== undefined) {
                         let Bougen = this.BougenLIST.split("\n")
-                        for (let i = 0; i < 2; i++) args.shift()
+                        let ReturnTxt = this.ReturnLIST.split("\n")
+                        let DetectionTxt = this.DetectionLIST.split("\n")
+
+                        let commandType = args[2]
+                        for (let i = 0; i < 3; i++) args.shift()
                         let content = args.join(" ")
-                        if (Bougen.includes(content)) {
-                            Bougen = Bougen.filter(value => value !== content)
-                            fs.writeFileSync("./bougen/bougen.txt","")
-                            for (let i = 0; i < Bougen.length; i++) if (Bougen[i] !== "") fs.appendFileSync("./bougen/bougen.txt",`${Bougen[i]}\n`)
-                            this.BougenLIST = fs.readFileSync("./bougen/bougen.txt","utf-8")
-                            this.MessageSend(`**${content}** を暴言リストから削除しました。\n現在暴言リストには${this.BougenLIST.split("\n").length-1}個の暴言が登録されています。`,message,true)
+
+                        if (Bougen.includes(content) || ReturnTxt.includes(content) || DetectionTxt.includes(content)) {
+                            switch (commandType) {
+                                case "bougen":
+                                    Bougen = Bougen.filter(value => value !== content)
+                                    fs.writeFileSync("./bougen/bougen.txt","")
+                                    for (let i = 0; i < Bougen.length; i++) if (Bougen[i] !== "") fs.appendFileSync("./bougen/bougen.txt",`${Bougen[i]}\n`)
+                                    this.BougenLIST = fs.readFileSync("./bougen/bougen.txt","utf-8")
+                                    this.MessageSend(`**${content}** を暴言リストから削除しました。`,message,true)
+                                    break
+                                case "return":
+                                    ReturnTxt = ReturnTxt.filter(value => value !== content)
+                                    fs.writeFileSync("./bougen/return.txt","")
+                                    for (let i = 0; i < ReturnTxt.length; i++) if (ReturnTxt[i] !== "") fs.appendFileSync("./bougen/return.txt",`${ReturnTxt[i]}\n`)
+                                    this.DetectionLIST = fs.readFileSync("./bougen/return.txt","utf-8")
+                                    this.MessageSend(`**${content}** を返答ワードから削除しました。`,message,true)
+                                    break
+                                case "detection":
+                                    DetectionTxt = DetectionTxt.filter(value => value !== content)
+                                    fs.writeFileSync("./bougen/detection.txt","")
+                                    for (let i = 0; i < DetectionTxt.length; i++) if (DetectionTxt[i] !== "") fs.appendFileSync("./bougen/detection.txt",`${DetectionTxt[i]}\n`)
+                                    this.DetectionLIST = fs.readFileSync("./bougen/detection.txt","utf-8")
+                                    this.MessageSend(`**${content}** を検知ワードから削除しました。`,message,true)
+                                    break
+                                default:
+                                    this.MessageSend("タイプが[bougen / return / detection]以外は無効です。",message,true)
+                                    break
+                            }
                         } else this.MessageSend("登録されていません",message,true)
                     } else if (message.d.content.startsWith("bougen search") && args[2] !== undefined) {
                         let Bougen = this.BougenLIST.split("\n")
-                        let content = args[2]
+                        let ReturnTxt = this.ReturnLIST.split("\n")
+                        let DetectionTxt = this.DetectionLIST.split("\n")
+                        
+                        for (let i = 0; i < 2; i++) args.shift()
+                        let content = args.join(" ")
+
                         if (Bougen.includes(content)) {
-                            this.MessageSend("登録済みです。",message,true)
+                            this.MessageSend("暴言に登録済みです。",message,true)
+                        } else if (ReturnTxt.includes(content)) {
+                            this.MessageSend("返答ワードに登録済みです。",message,true)
+                        } else if (DetectionTxt.includes(content)) {
+                            this.MessageSend("検知ワードに登録済みです。",message,true)
                         } else this.MessageSend("登録されていません",message,true)
                     } else if (message.d.content.startsWith("bougen guild") && args[2] !== undefined) {
                         let result = await this.NonDetection("guilds",args[2])
@@ -205,13 +266,18 @@ export class BOT {
     }
     async BougenReply(content:string,Message:infos) {
         let Bougen = this.BougenLIST.split("\n")
-        if (Bougen.includes(content) || ((await this.RandomReply()) && (await this.ReplyContext(content))) || (await this.BotMessageReply(Message))) {
+        let DetectionTxt = this.DetectionLIST.split("\n")
+        if (Bougen.includes(content) || DetectionTxt.includes(content) || ((await this.RandomReply()) && (await this.ReplyContext(content))) || (await this.BotMessageReply(Message))) {
             this.MessageSend((await this.RandomBougen()),Message,true)
         }
     }
     async RandomBougen():Promise<string> {
         let Bougen = this.BougenLIST.split("\n")
+        let ReturnTxt = this.ReturnLIST.split("\n")
         let BougenContext = Bougen[Math.floor(Math.random()*Bougen.length)]
+
+        if (Math.floor(Math.random()*2) === 0) BougenContext = ReturnTxt[Math.floor(Math.random()*ReturnTxt.length)]
+
         if (BougenContext !== "") {
             return BougenContext
         } else return this.RandomBougen()
@@ -254,7 +320,7 @@ export class BOT {
             },
             {
                 name:"list",
-                description:"リストを表示します"
+                description:"暴言詳細"
             }
         ]
         for (let i = 0; i < data.length; i++) {
@@ -281,7 +347,7 @@ export class BOT {
             data = {
                 type:4,
                 data: {
-                    content:`\`\`\`${this.BougenLIST}\`\`\``
+                    content:`返答ワード${this.ReturnLIST.split("\n").length-1}個\n検知ワード${this.DetectionLIST.split("\n").length-1}個\n両方${this.BougenLIST.split("\n").length-1}個\n合計${this.ReturnLIST.split("\n").length-1+this.DetectionLIST.split("\n").length-1+this.BougenLIST.split("\n").length-1}個`
                 }
             }
         }
